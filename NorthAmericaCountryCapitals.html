@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>North America Country-Capital Match</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    h2 {
+      margin-bottom: 5px;
+    }
+    #score {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #333;
+      float: right;
+    }
+    #buttons {
+      margin-bottom: 20px;
+    }
+    .column {
+      display: inline-block;
+      vertical-align: top;
+      width: 40%;
+      margin: 10px;
+    }
+    .item {
+      padding: 10px;
+      margin: 5px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .correct {
+      background-color: #d4edda;
+      border-color: #28a745;
+      color: #155724;
+    }
+    .wrong {
+      background-color: #f8d7da;
+      border-color: #dc3545;
+      color: #721c24;
+    }
+  </style>
+</head>
+<body>
+  <div id="buttons">
+    <button onclick="resetGame()">Reset</button>
+    <button onclick="shuffleGame()">Shuffle</button>
+    <span id="score">Score: 0</span>
+  </div>
+  <h2>Match the Country with its Capital</h2>
+  <div class="column" id="countries"></div>
+  <div class="column" id="capitals"></div>
+
+  <canvas id="confetti" style="position: fixed; top: 0; left: 0; pointer-events: none;"></canvas>
+
+  <script>
+    const pairs = [
+      ["Antigua and Barbuda", "St. John’s"],
+      ["Commonwealth of the Bahamas", "Nassau"],
+      ["Barbados", "Bridgetown"],
+      ["Belize", "Belmopan"],
+      ["Canada", "Ottawa"],
+      ["Republic of Costa Rica", "San Jose"],
+      ["Republic of Cuba", "Havana"],
+      ["Commonwealth of Dominica", "Roseau"],
+      ["Dominican Republic", "Santo Domingo de Guzman"],
+      ["Republic of El Salvador", "San Salvador"],
+      ["Republic of Guatemala", "Guatemala City"],
+      ["Republic of Haiti", "Port-au-Prince"],
+      ["Republic of Honduras", "Tegucigalpa"],
+      ["Jamaica", "Kingston"],
+      ["United Mexican States", "Mexico City"],
+      ["Republic of Nicaragua", "Managua"],
+      ["Republic of Panama", "Panama City"],
+      ["Federation of Saint Kitts and Nevis", "Basseterre"],
+      ["Saint Lucia", "Castries"],
+      ["Saint Vincent and the Grenadines", "Kingstown"],
+      ["Republic of Trinidad and Tobago", "Port of Spain"],
+      ["United States of America", "Washington, D.C."]
+    ];
+
+    let score = 0;
+    let selectedCountry = null;
+    let correctCount = 0;
+
+    function shuffleArray(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function updateScoreDisplay() {
+      document.getElementById("score").innerText = `Score: ${score}`;
+    }
+
+    function resetGame() {
+      score = 0;
+      correctCount = 0;
+      selectedCountry = null;
+      document.getElementById("countries").innerHTML = "";
+      document.getElementById("capitals").innerHTML = "";
+      updateScoreDisplay();
+      renderGame();
+    }
+
+    function shuffleGame() {
+      resetGame();
+    }
+
+    function renderGame() {
+      const countryCol = document.getElementById("countries");
+      const capitalCol = document.getElementById("capitals");
+      const shuffledCapitals = shuffleArray([...pairs.map(p => p[1])]);
+
+      pairs.forEach(([country, capital]) => {
+        const cDiv = document.createElement("div");
+        cDiv.innerText = country;
+        cDiv.className = "item";
+        cDiv.onclick = () => selectCountry(cDiv, country);
+        countryCol.appendChild(cDiv);
+      });
+
+      shuffledCapitals.forEach(capital => {
+        const capDiv = document.createElement("div");
+        capDiv.innerText = capital;
+        capDiv.className = "item";
+        capDiv.onclick = () => checkMatch(capDiv, capital);
+        capitalCol.appendChild(capDiv);
+      });
+    }
+
+    function selectCountry(div, country) {
+      if (div.classList.contains("correct")) return;
+      const items = document.querySelectorAll("#countries .item");
+      items.forEach(d => d.style.border = "1px solid #ccc");
+      div.style.border = "2px solid blue";
+      selectedCountry = country;
+    }
+
+    function checkMatch(div, capital) {
+      if (div.classList.contains("correct") || !selectedCountry) return;
+
+      const match = pairs.find(p => p[0] === selectedCountry && p[1] === capital);
+      if (match) {
+        div.classList.add("correct");
+        const countryDivs = document.querySelectorAll("#countries .item");
+        countryDivs.forEach(d => {
+          if (d.innerText === selectedCountry) d.classList.add("correct");
+        });
+        score += 1;
+        correctCount += 1;
+        if (correctCount === pairs.length) {
+          launchConfetti();
+        }
+      } else {
+        div.classList.add("wrong");
+        setTimeout(() => div.classList.remove("wrong"), 600);
+        score -= 1;
+      }
+
+      selectedCountry = null;
+      updateScoreDisplay();
+    }
+
+    function launchConfetti() {
+      const canvas = document.getElementById('confetti');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const pieces = [];
+      for (let i = 0; i < 150; i++) {
+        pieces.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          r: Math.random() * 6 + 4,
+          d: Math.random() * 10 + 5,
+          color: `hsl(${Math.random() * 360}, 100%, 50%)`,
+          tilt: Math.random() * 10 - 10
+        });
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        pieces.forEach(p => {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = p.color;
+          ctx.fill();
+          p.y += p.d * 0.5;
+          if (p.y > canvas.height) p.y = -10;
+        });
+        requestAnimationFrame(draw);
+      }
+
+      draw();
+      setTimeout(() => { canvas.width = 0; canvas.height = 0; }, 6000);
+    }
+
+    renderGame();
+  </script>
+</body>
+</html>
